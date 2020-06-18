@@ -1,0 +1,11 @@
+{
+    "TestFlag":true,
+    "ListenPort":3001,
+    "Db": {
+      "Host":"---", 
+      "Port":8123, 
+      "User":"---",
+      "Pass":"---",
+      "Name":"---"
+    }
+}
