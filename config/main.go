@@ -23,6 +23,7 @@ type Config struct {
 	DbUser        string `env:"CHUPD_DBUSER"`
 	DbPass        string `env:"CHUPD_DBPASS"`
 	DbPort        int    `env:"CHUPD_DBPORT"`
+	CHUrl         string `env:"CHUPD_CHURL"`
 }
 
 type Env struct {

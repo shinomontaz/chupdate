@@ -10,5 +10,6 @@ require (
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/prometheus/client_golang v1.6.0
 	github.com/sirupsen/logrus v1.6.0
+	github.com/stretchr/testify v1.4.0
 	github.com/tkanos/gonfig v0.0.0-20181112185242-896f3d81fadf
 )

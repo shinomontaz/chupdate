@@ -13,8 +13,10 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/shinomontaz/chupdate/config"
-	"github.com/shinomontaz/chupdate/internal/collector"
+	"github.com/shinomontaz/chupdate/internal/inserter"
+	"github.com/shinomontaz/chupdate/internal/parser"
 	"github.com/shinomontaz/chupdate/internal/service"
+	"github.com/shinomontaz/chupdate/internal/updater"
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
@@ -34,8 +36,16 @@ func main() {
 	signals := make(chan os.Signal)
 	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM)
 
-	collr := collector.New(env.Config.FlushInterval, env.Config.FlushCount)
-	prc := service.New(collr, env.Db)
+	var makeReq func(q, content string, count int)
+	makeReq = func(q, content string, count int) {
+		fmt.Println("now we send a request", q, content)
+	}
+
+	parsr := parser.New()
+	instr := inserter.New(env.Config.FlushInterval, env.Config.FlushCount, makeReq)
+	updtr := updater.New(instr, env.Db)
+
+	prc := service.New(instr, updtr, parsr, env.Config.CHUrl, env.Db)
 
 	mux := NewMux()
 	srv := &http.Server{
