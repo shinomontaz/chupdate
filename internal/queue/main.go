@@ -16,12 +16,14 @@ type Queue struct {
 }
 
 func Create(Count, FlushInterval int, query string, makeReq func(q, content string, count int)) *Queue {
-	return &Queue{
+	q := &Queue{
 		Query:       query,
 		MaxCount:    Count,
 		MaxInterval: FlushInterval,
 		makeReq:     makeReq,
 	}
+	q.RunTimer()
+	return q
 }
 
 func (q *Queue) RunTimer() {
