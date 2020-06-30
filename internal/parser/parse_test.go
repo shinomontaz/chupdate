@@ -86,11 +86,12 @@ func TestParse(t *testing.T) {
 
 func TestUpdate(t *testing.T) {
 	prs := New()
-	qTitleUpdate := "UPDATE table3 SET c1 = 1"
+	qTitleUpdate := "UPDATE table3 SET c1 = 1, 'c2' = 'sdfsdf' WHERE c3 = 2 AND c4 = 'sdfsdf'"
 	body := strings.ToLower(qTitleUpdate)
-	params, _, insert, update, _ := prs.Parse(body)
+	where, cols, vals := prs.Updateparse(body)
 
-	assert.Equal(t, "query="+url.QueryEscape(strings.ToLower(qTitleUpdate)), params)
-	assert.Equal(t, true, update)
-	assert.Equal(t, false, insert)
+	t.Logf("where: %s", where)
+	t.Logf("cols: %v", cols)
+	t.Logf("vals: %v", vals)
+
 }

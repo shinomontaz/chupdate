@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"fmt"
 	"net/url"
 	"regexp"
 	"strings"
@@ -79,4 +80,29 @@ func (p *Service) dataparse(text string) (prefix string, content string) {
 		}
 	}
 	return prefix, content
+}
+
+func (p *Service) Updateparse(text string) (where string, cols []string, values string) {
+	whIdx := strings.Index(text, "where")
+	where = text[whIdx+6:]
+	fmt.Printf("condition: %s", where)
+
+	setIdx := strings.Index(text, "set")
+	set := text[setIdx+3 : whIdx]
+
+	// split set substr
+
+	pairs := strings.Split(set, ",")
+	vals := make([]string, 0, 0)
+	for _, pair := range pairs {
+		parts := strings.Split(pair, "=")
+
+		cols = append(cols, strings.TrimSpace(parts[0]))
+		vals = append(vals, strings.TrimSpace(parts[1]))
+	}
+
+	values = strings.Join(vals, ", ")
+	fmt.Printf("result: %v", cols)
+
+	return where, cols, values
 }
