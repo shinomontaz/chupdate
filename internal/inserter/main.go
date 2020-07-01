@@ -12,14 +12,16 @@ type Service struct {
 	Count         int
 	FlushInterval int
 	makeReq       func(q, content string, count int)
+	errs          chan<- error
 }
 
-func New(flush_interval, flush_count int, makeReq func(q, content string, count int)) *Service {
+func New(flush_interval, flush_count int, makeReq func(q, content string, count int), errs chan<- error) *Service {
 	return &Service{
 		FlushInterval: flush_interval,
 		Count:         flush_count,
 		List:          make(map[string]*queue.Queue),
 		makeReq:       makeReq,
+		errs:          errs,
 	}
 }
 

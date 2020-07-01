@@ -82,7 +82,7 @@ func (p *Service) dataparse(text string) (prefix string, content string) {
 	return prefix, content
 }
 
-func (p *Service) Updateparse(text string) (where string, cols []string, values string) {
+func (p *Service) Updateparse(text string) (table, where string, cols []string, values []string) {
 	whIdx := strings.Index(text, "where")
 	where = text[whIdx+6:]
 	fmt.Printf("condition: %s", where)
@@ -90,19 +90,18 @@ func (p *Service) Updateparse(text string) (where string, cols []string, values 
 	setIdx := strings.Index(text, "set")
 	set := text[setIdx+3 : whIdx]
 
+	//update
+	table = strings.TrimSpace(text[6:setIdx])
+
 	// split set substr
 
 	pairs := strings.Split(set, ",")
-	vals := make([]string, 0, 0)
 	for _, pair := range pairs {
 		parts := strings.Split(pair, "=")
 
 		cols = append(cols, strings.TrimSpace(parts[0]))
-		vals = append(vals, strings.TrimSpace(parts[1]))
+		values = append(values, strings.TrimSpace(parts[1]))
 	}
 
-	values = strings.Join(vals, ", ")
-	fmt.Printf("result: %v", cols)
-
-	return where, cols, values
+	return table, where, cols, values
 }

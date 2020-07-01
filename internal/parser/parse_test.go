@@ -88,10 +88,12 @@ func TestUpdate(t *testing.T) {
 	prs := New()
 	qTitleUpdate := "UPDATE table3 SET c1 = 1, 'c2' = 'sdfsdf' WHERE c3 = 2 AND c4 = 'sdfsdf'"
 	body := strings.ToLower(qTitleUpdate)
-	where, cols, vals := prs.Updateparse(body)
+	table, where, cols, vals := prs.Updateparse(body)
+
+	assert.Equal(t, "table3", table)
+	assert.Equal(t, "c3 = 2 and c4 = 'sdfsdf'", where)
 
 	t.Logf("where: %s", where)
 	t.Logf("cols: %v", cols)
 	t.Logf("vals: %v", vals)
-
 }

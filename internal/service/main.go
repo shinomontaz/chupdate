@@ -22,14 +22,16 @@ type Service struct {
 	db       *sqlx.DB
 	client   *http.Client
 	parser   Parser
+	errs     chan<- error
 }
 
-func New(ins Inserter, upd Updater, p Parser, url string, db *sqlx.DB) *Service {
+func New(ins Inserter, upd Updater, p Parser, url string, db *sqlx.DB, errs chan<- error) *Service {
 	return &Service{
 		inserter: ins,
 		updater:  upd,
 		db:       db,
 		url:      url,
+		errs:     errs,
 		client: &http.Client{
 			Timeout: time.Second * time.Duration(3),
 		},

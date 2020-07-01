@@ -13,8 +13,10 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/shinomontaz/chupdate/config"
+	"github.com/shinomontaz/chupdate/internal/errorer"
 	"github.com/shinomontaz/chupdate/internal/inserter"
 	"github.com/shinomontaz/chupdate/internal/parser"
+
 	"github.com/shinomontaz/chupdate/internal/service"
 	"github.com/shinomontaz/chupdate/internal/updater"
 
@@ -26,10 +28,12 @@ import (
 )
 
 var env *config.Env
+var errors chan error
 
 func init() {
 	env = config.NewEnv("./config")
 	env.InitDb()
+	errors = make(chan error, 1000)
 }
 
 func main() {
@@ -41,11 +45,12 @@ func main() {
 		fmt.Println("now we send a request", q, content)
 	}
 
+	errorer.Listen(errors)
 	parsr := parser.New()
-	instr := inserter.New(env.Config.FlushInterval, env.Config.FlushCount, makeReq)
-	updtr := updater.New(instr, env.Db)
+	instr := inserter.New(env.Config.FlushInterval, env.Config.FlushCount, makeReq, errors)
+	updtr := updater.New(instr, parsr, env.Db, errors)
 
-	prc := service.New(instr, updtr, parsr, env.Config.CHUrl, env.Db)
+	prc := service.New(instr, updtr, parsr, env.Config.CHUrl, env.Db, errors)
 
 	mux := NewMux()
 	srv := &http.Server{
