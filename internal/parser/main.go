@@ -5,6 +5,8 @@ import (
 	"net/url"
 	"regexp"
 	"strings"
+
+	log "github.com/sirupsen/logrus"
 )
 
 type Service struct {
@@ -34,6 +36,9 @@ func (p *Service) Parse(body string) (query, content string, insert, update bool
 	}
 
 	query = "query=" + url.QueryEscape(q)
+
+	log.Debug("Parse: ", query)
+
 	return strings.TrimSpace(query), strings.TrimSpace(content), insert, update, nil
 }
 

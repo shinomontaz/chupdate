@@ -1,11 +1,9 @@
 {
     "TestFlag":true,
     "ListenPort":3001,
-    "Db": {
-      "Host":"---", 
-      "Port":8123, 
-      "User":"---",
-      "Pass":"---",
-      "Name":"---"
-    }
+    "DbHost": "localhost",
+    "DbPort": 9000,
+    "DbName": "test",
+    "DbUser": "default",
+    "DbPass": "qwe"
 }

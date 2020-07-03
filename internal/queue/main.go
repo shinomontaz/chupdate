@@ -1,6 +1,7 @@
 package queue
 
 import (
+	"fmt"
 	"strings"
 	"sync"
 	"time"
@@ -36,6 +37,7 @@ func (q *Queue) RunTimer() {
 }
 
 func (q *Queue) Add(text string) {
+	fmt.Println("queue add: ", text)
 	q.mu.Lock()
 	defer q.mu.Unlock()
 	q.Rows = append(q.Rows, text)

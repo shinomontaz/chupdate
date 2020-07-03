@@ -23,8 +23,6 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/cors"
-
-	_ "github.com/ClickHouse/clickhouse-go"
 )
 
 var env *config.Env
@@ -45,7 +43,7 @@ func main() {
 		fmt.Println("now we send a request", q, content)
 	}
 
-	errorer.Listen(errors)
+	go errorer.Listen(errors)
 	parsr := parser.New()
 	instr := inserter.New(env.Config.FlushInterval, env.Config.FlushCount, makeReq, errors)
 	updtr := updater.New(instr, parsr, env.Db, errors)
@@ -57,7 +55,7 @@ func main() {
 		Addr:    fmt.Sprintf(":%d", env.Config.ListenPort),
 		Handler: mux,
 	}
-	mux.Post("/", prc.Process)
+	mux.Post("/", prc.Handle)
 	mux.Get("/metrics", promhttp.Handler().ServeHTTP)
 	//	mux.Get("/alive", alive handler)
 

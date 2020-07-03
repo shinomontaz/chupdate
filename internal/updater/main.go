@@ -1,8 +1,8 @@
 package updater
 
 import (
+	"errors"
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/jmoiron/sqlx"
@@ -37,13 +37,15 @@ func (s *Service) Push(query string) {
 
 	rows, err := s.db.Query(selectsql)
 	if err != nil {
-		log.Fatal(err)
+		s.errs <- err
+		return
 	}
 	defer rows.Close()
 
 	res_cols, err := rows.Columns()
 	if err != nil {
-		log.Fatal(err)
+		s.errs <- err
+		return
 	}
 	var result [][]string
 	pointers := make([]interface{}, len(res_cols))
@@ -57,7 +59,8 @@ func (s *Service) Push(query string) {
 	}
 
 	if len(result) > 1 {
-		log.Fatal("Update by a non PK")
+		s.errs <- errors.New("Malformed update request - non precise PK")
+		return
 	}
 
 	res := result[0]

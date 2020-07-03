@@ -10,6 +10,7 @@ import (
 
 	_ "net/http/pprof"
 
+	_ "github.com/ClickHouse/clickhouse-go"
 	"github.com/jmoiron/sqlx"
 )
 
