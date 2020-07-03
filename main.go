@@ -31,6 +31,7 @@ var errors chan error
 func init() {
 	env = config.NewEnv("./config")
 	env.InitDb()
+	env.InitLog()
 	errors = make(chan error, 1000)
 }
 

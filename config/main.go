@@ -42,17 +42,20 @@ func NewEnv(path string) *Env {
 	}
 
 	loglevel := log.WarnLevel
-	if cfg.TestFlag {
-		loglevel = log.DebugLevel
-	}
-
-	log.SetLevel(loglevel)
-	log.SetFormatter(&log.JSONFormatter{})
 
 	return &Env{
 		Config:   &cfg,
 		loglevel: loglevel,
 	}
+}
+
+func (e *Env) InitLog() {
+	if e.Config.TestFlag {
+		e.loglevel = log.DebugLevel
+	}
+
+	log.SetLevel(e.loglevel)
+	log.SetFormatter(&log.JSONFormatter{})
 }
 
 func (e *Env) InitDb() {

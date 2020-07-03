@@ -43,7 +43,9 @@ func New(ins Inserter, upd Updater, parsr Parser, url string, db *sqlx.DB, errs 
 func (s *Service) Process(data string) (resp string, err error) {
 	// params = "INSERT INTO table3 (c1, c2, c3) FORMAT TabSeparated"
 	// content = "v11	v12	v13\nv21	v22	v23"
+	data = strings.ToLower(data)
 	query, content, insert, update, err := s.parser.Parse(data) // query=INSERT INTO table3 (c1, c2, c3) VALUES ('v1', 'v2', 'v3') and this string entirely is in 'qs' or 'ss'
+
 	if err != nil {
 		return "", err
 	}
@@ -58,7 +60,7 @@ func (s *Service) Process(data string) (resp string, err error) {
 		return "", nil
 	}
 
-	resp, _, err = s.SendQuery(query)
+	resp, _, err = s.SendQuery(data)
 	return resp, err
 }
 
@@ -68,40 +70,13 @@ func (s *Service) Handle(w http.ResponseWriter, r *http.Request) {
 	q, _ := ioutil.ReadAll(r.Body)
 	ss := string(q)
 
-	query, content, insert, update, err := s.parser.Parse(ss) // query=INSERT INTO table3 (c1, c2, c3) VALUES ('v1', 'v2', 'v3') and this string entirely is in 'qs' or 'ss'
+	resp, err := s.Process(ss)
 	if err != nil {
 		s.errs <- err
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(fmt.Sprintf("%s", err)))
 		return
 	}
-
-	if insert {
-		go s.inserter.Push(query, content)
-		w.WriteHeader(http.StatusOK)
-		return
-	}
-
-	if update {
-		go s.updater.Push(query)
-		w.WriteHeader(http.StatusOK)
-		return
-	}
-
-	resp, _, err := s.SendQuery(ss)
-	//	return resp, err
-
-	if s.Debug {
-		log.Printf("query %+v %+v\n", r.URL.String(), ss)
-	}
-
-	//	resp, err := s.Process(ss)
-	// if err != nil {
-	// 	s.errs <- err
-	// 	w.WriteHeader(http.StatusInternalServerError)
-	// 	w.Write([]byte(fmt.Sprintf("%s", err)))
-	// 	return
-	// }
 
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
@@ -117,7 +92,7 @@ func (s *Service) Shutdown(ctx context.Context) error {
 func (s *Service) SendQuery(query string) (response string, status int, err error) {
 	resp, err := s.client.Post(s.url, "", strings.NewReader(query))
 
-	fmt.Println("send query", s.url)
+	log.Debug("send query", s.url)
 
 	if err != nil {
 		return err.Error(), http.StatusBadGateway, errors.New("server is down")

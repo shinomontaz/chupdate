@@ -21,6 +21,8 @@ var errors chan error
 
 func init() {
 	env = config.NewEnv("../config")
+	env.Config.TestFlag = false
+	env.InitLog()
 	env.InitDb()
 	errors = make(chan error, 1000)
 }
@@ -44,8 +46,6 @@ func BenchmarkInsert(b *testing.B) {
 		randName = randString(10)
 		randField = randBool()
 		query = fmt.Sprintf("INSERT INTO test2 (id, event, another_field) VALUES (%d, '%s', %d)", uint32(i+1), randName, randField)
-
-		fmt.Println(query)
 
 		_, err := prc.Process(query)
 		if err != nil {

@@ -1,7 +1,6 @@
 package queue
 
 import (
-	"fmt"
 	"strings"
 	"sync"
 	"time"
@@ -28,6 +27,10 @@ func Create(Count, FlushInterval int, query string, makeReq func(q, content stri
 }
 
 func (q *Queue) RunTimer() {
+	if q.MaxInterval < 0 {
+		return
+	}
+
 	ticker := time.NewTicker(time.Millisecond * time.Duration(q.MaxInterval))
 	go func() {
 		for range ticker.C {
@@ -37,7 +40,6 @@ func (q *Queue) RunTimer() {
 }
 
 func (q *Queue) Add(text string) {
-	fmt.Println("queue add: ", text)
 	q.mu.Lock()
 	defer q.mu.Unlock()
 	q.Rows = append(q.Rows, text)
