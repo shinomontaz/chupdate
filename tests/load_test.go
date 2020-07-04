@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/shinomontaz/chupdate/config"
 	"github.com/shinomontaz/chupdate/internal/errorer"
@@ -52,6 +53,35 @@ func BenchmarkInsert(b *testing.B) {
 			log.Fatal(err)
 		}
 	}
+}
+
+func TestInsert(t *testing.T) {
+	go errorer.Listen(errors)
+
+	var makeReq func(q, content string, count int)
+	makeReq = func(q, content string, count int) {
+		fmt.Println("now we send a request", q, content)
+	}
+
+	parsr := parser.New()
+	instr := inserter.New(-1, env.Config.FlushCount, makeReq, errors)
+	updtr := updater.New(instr, parsr, env.Db, errors)
+
+	prc := service.New(instr, updtr, parsr, env.Config.CHUrl, env.Db, errors)
+	var query, randName string
+	var randField uint8
+	for i := 0; i < 10; i++ {
+		randName = randString(10)
+		randField = randBool()
+		query = fmt.Sprintf("INSERT INTO test2 (id, event, another_field) VALUES (%d, '%s', %d)", uint32(i+1), randName, randField)
+
+		_, err := prc.Process(query)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	time.Sleep(10000)
 }
 
 func randBool() uint8 {

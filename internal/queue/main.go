@@ -1,6 +1,7 @@
 package queue
 
 import (
+	"fmt"
 	"strings"
 	"sync"
 	"time"
@@ -16,6 +17,7 @@ type Queue struct {
 }
 
 func Create(Count, FlushInterval int, query string, makeReq func(q, content string, count int)) *Queue {
+	fmt.Println("creating queue", query)
 	q := &Queue{
 		Query:       query,
 		MaxCount:    Count,
@@ -40,6 +42,7 @@ func (q *Queue) RunTimer() {
 }
 
 func (q *Queue) Add(text string) {
+	fmt.Println("queue add", text)
 	q.mu.Lock()
 	defer q.mu.Unlock()
 	q.Rows = append(q.Rows, text)

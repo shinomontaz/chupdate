@@ -31,6 +31,7 @@ func (s *Service) Push(query, params string) {
 	q, ok := s.List[query]
 	if !ok {
 		q = queue.Create(s.Count, s.FlushInterval, query, s.makeReq)
+		s.List[query] = q
 	}
 	q.Add(params)
 }
