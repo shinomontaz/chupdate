@@ -1,10 +1,11 @@
 package queue
 
 import (
-	"fmt"
 	"strings"
 	"sync"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 )
 
 type Queue struct {
@@ -17,7 +18,7 @@ type Queue struct {
 }
 
 func Create(Count, FlushInterval int, query string, makeReq func(q, content string, count int)) *Queue {
-	fmt.Println("creating queue", query)
+	log.Debug("creating queue", query)
 	q := &Queue{
 		Query:       query,
 		MaxCount:    Count,
@@ -42,7 +43,7 @@ func (q *Queue) RunTimer() {
 }
 
 func (q *Queue) Add(text string) {
-	fmt.Println("queue add", text)
+	log.Debug("queue add", text)
 	q.mu.Lock()
 	defer q.mu.Unlock()
 	q.Rows = append(q.Rows, text)
@@ -61,10 +62,12 @@ func (q *Queue) flush() {
 	q.Rows = make([]string, 0, q.MaxCount)
 }
 
-func (q *Queue) Flush() {
+func (q *Queue) Flush() int {
 	q.mu.Lock()
 	defer q.mu.Unlock()
-	if len(q.Rows) > 0 {
+	ln := len(q.Rows)
+	if ln > 0 {
 		q.flush()
 	}
+	return ln
 }
