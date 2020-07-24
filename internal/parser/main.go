@@ -1,8 +1,6 @@
 package parser
 
 import (
-	"fmt"
-	"net/url"
 	"regexp"
 	"strings"
 
@@ -35,7 +33,7 @@ func (p *Service) Parse(body string) (query, content string, insert, update bool
 		update = true
 	}
 
-	query = "query=" + url.QueryEscape(q)
+	query = q //"query=" + url.QueryEscape(q)
 
 	log.Debug("Parse: ", query)
 
@@ -87,10 +85,17 @@ func (p *Service) dataparse(text string) (prefix string, content string) {
 	return prefix, content
 }
 
-func (p *Service) Updateparse(text string) (table, where string, cols []string, values []string) {
+func (p *Service) Updateparse(text string) (table, where string, cols []string, values []string, condition_cols []string) {
 	whIdx := strings.Index(text, "where")
 	where = text[whIdx+6:]
-	fmt.Printf("condition: %s", where)
+
+	// parse where, get column names
+
+	cond_cols := strings.Split(where, "AND")
+	for _, cond := range cond_cols {
+		col_val := strings.Split(strings.TrimSpace(cond), "=")
+		condition_cols = append(condition_cols, strings.TrimSpace(col_val[0]))
+	}
 
 	setIdx := strings.Index(text, "set")
 	set := text[setIdx+3 : whIdx]
@@ -108,5 +113,5 @@ func (p *Service) Updateparse(text string) (table, where string, cols []string, 
 		values = append(values, strings.TrimSpace(parts[1]))
 	}
 
-	return table, where, cols, values
+	return table, where, cols, values, condition_cols
 }

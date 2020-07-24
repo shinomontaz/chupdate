@@ -1,6 +1,7 @@
 package queue
 
 import (
+	"context"
 	"strings"
 	"sync"
 	"time"
@@ -70,4 +71,10 @@ func (q *Queue) Flush() int {
 		q.flush()
 	}
 	return ln
+}
+
+func (q *Queue) Shutdown(ctx context.Context) {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	q.flush()
 }

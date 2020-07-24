@@ -47,7 +47,7 @@ func main() {
 	go errorer.Listen(errors)
 	parsr := parser.New()
 	instr := inserter.New(env.Config.FlushInterval, env.Config.FlushCount, makeReq, errors)
-	updtr := updater.New(instr, parsr, env.Db, errors)
+	updtr := updater.New(instr, parsr, env.Config.CHUrl, env.Db, errors)
 
 	prc := service.New(instr, updtr, parsr, env.Config.CHUrl, env.Db, errors)
 

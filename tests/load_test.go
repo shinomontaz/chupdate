@@ -2,16 +2,20 @@ package test
 
 import (
 	"fmt"
-	"log"
+	"io/ioutil"
+	"net/http"
+	"time"
+
 	"math/rand"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/shinomontaz/chupdate/config"
 	"github.com/shinomontaz/chupdate/internal/errorer"
 	"github.com/shinomontaz/chupdate/internal/inserter"
 	"github.com/shinomontaz/chupdate/internal/parser"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/shinomontaz/chupdate/internal/service"
 	"github.com/shinomontaz/chupdate/internal/updater"
@@ -28,60 +32,54 @@ func init() {
 	errors = make(chan error, 1000)
 }
 
-func BenchmarkInsert(b *testing.B) {
-	go errorer.Listen(errors)
-
-	var makeReq func(q, content string, count int)
-	makeReq = func(q, content string, count int) {
-		fmt.Println("now we send a request", q, content)
+func makeReq(q, content string, count int) {
+	cl := &http.Client{
+		Timeout: time.Second * time.Duration(30),
 	}
 
-	parsr := parser.New()
-	instr := inserter.New(env.Config.FlushInterval, env.Config.FlushCount, makeReq, errors)
-	updtr := updater.New(instr, parsr, env.Db, errors)
-
-	prc := service.New(instr, updtr, parsr, env.Config.CHUrl, env.Db, errors)
-	var query, randName string
-	var randField uint8
-	for i := 0; i < b.N; i++ {
-		randName = randString(10)
-		randField = randBool()
-		query = fmt.Sprintf("INSERT INTO test2 (id, event, another_field) VALUES (%d, '%s', %d)", uint32(i+1), randName, randField)
-
-		_, err := prc.Process(query)
-		if err != nil {
-			log.Fatal(err)
-		}
+	log.Debug("send query", content)
+	resp, err := cl.Post(env.Config.CHUrl, "", strings.NewReader(content))
+	if err != nil {
+		panic(err)
+	}
+	buf, _ := ioutil.ReadAll(resp.Body)
+	s := string(buf)
+	if resp.StatusCode >= 502 {
+		panic("502")
+	} else if resp.StatusCode >= 400 {
+		panic(fmt.Sprintf("Wrong server status %+v:\nresponse: %+v\nrequest: %#v", resp.StatusCode, s, content))
 	}
 }
 
-func TestInsert(t *testing.T) {
+func BenchmarkSelectHttp(b *testing.B) {
 	go errorer.Listen(errors)
 
-	var makeReq func(q, content string, count int)
-	makeReq = func(q, content string, count int) {
-		fmt.Println("now we send a request", q, content)
-	}
-
 	parsr := parser.New()
-	instr := inserter.New(-1, env.Config.FlushCount, makeReq, errors)
-	updtr := updater.New(instr, parsr, env.Db, errors)
+	instr := inserter.New(env.Config.FlushInterval, env.Config.FlushCount, makeReq, errors)
+	updtr := updater.New(instr, parsr, env.Config.CHUrl, env.Db, errors)
 
 	prc := service.New(instr, updtr, parsr, env.Config.CHUrl, env.Db, errors)
-	var query, randName string
-	var randField uint8
-	for i := 0; i < 10; i++ {
-		randName = randString(10)
-		randField = randBool()
-		query = fmt.Sprintf("INSERT INTO test2 (id, event, another_field) VALUES (%d, '%s', %d)", uint32(i+1), randName, randField)
+	var query string
 
-		_, err := prc.Process(query)
-		if err != nil {
-			log.Fatal(err)
-		}
+	for i := 0; i < 100; i++ {
+		query = fmt.Sprintf("SELECT * FROM test.test2 WHERE id = %d ORDER BY time LIMIT 1 BY id", uint32(i+1))
+		go func(query string) {
+			resp, err := prc.Process(query)
+			if err != nil {
+				panic(err)
+			}
+			fmt.Println(resp)
+		}(query)
 	}
 
-	time.Sleep(10000)
+	// for i := 0; i < b.N; i++ {
+	// 	query = fmt.Sprintf("SELECT * FROM test.test2 WHERE id = %d ORDER BY time LIMIT 1 BY id", uint32(i+1))
+
+	// 	_, err := prc.Process(query)
+	// 	if err != nil {
+	// 		panic(err)
+	// 	}
+	// }
 }
 
 func randBool() uint8 {

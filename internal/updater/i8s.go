@@ -5,5 +5,5 @@ type Inserter interface {
 }
 
 type Parser interface {
-	Updateparse(body string) (table, where string, cols []string, values []string)
+	Updateparse(body string) (table, where string, cols []string, values []string, condition_cols []string)
 }

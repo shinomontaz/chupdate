@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -23,10 +24,11 @@ type Service struct {
 	client   *http.Client
 	parser   Parser
 	errs     chan<- error
+	wg       sync.WaitGroup
 }
 
 func New(ins Inserter, upd Updater, parsr Parser, url string, db *sqlx.DB, errs chan<- error) *Service {
-	return &Service{
+	s := &Service{
 		inserter: ins,
 		updater:  upd,
 		parser:   parsr,
@@ -38,6 +40,11 @@ func New(ins Inserter, upd Updater, parsr Parser, url string, db *sqlx.DB, errs 
 			Timeout: time.Second * time.Duration(3),
 		},
 	}
+
+	ins.SetWg(&s.wg)
+	upd.SetWg(&s.wg)
+
+	return s
 }
 
 func (s *Service) Process(data string) (resp string, err error) {
@@ -51,11 +58,13 @@ func (s *Service) Process(data string) (resp string, err error) {
 	}
 
 	if insert {
+		s.wg.Add(1)
 		go s.inserter.Push(query, content)
 		return "", nil
 	}
 
 	if update {
+		s.wg.Add(1)
 		go s.updater.Push(query)
 		return "", nil
 	}
@@ -85,6 +94,10 @@ func (s *Service) Handle(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Service) Shutdown(ctx context.Context) error {
+	s.wg.Wait()
+	s.updater.Shutdown(ctx)
+	s.inserter.Shutdown(ctx)
+
 	log.Printf("service shutting down\n")
 	return nil
 }
@@ -99,11 +112,13 @@ func (s *Service) SendQuery(query string) (response string, status int, err erro
 	}
 
 	buf, _ := ioutil.ReadAll(resp.Body)
+	resp.Body.Close()
+
 	ss := string(buf)
 	if resp.StatusCode >= 502 {
 		err = errors.New("server is down")
 	} else if resp.StatusCode >= 400 {
-		err = fmt.Errorf("Wrong server status %+v:\nresponse: %+v\nrequest: %#v", resp.StatusCode, s, query)
+		err = fmt.Errorf("Wrong server status %+v:\nresponse: %+v\nrequest: %#v", resp.StatusCode, ss, query)
 	}
 	return ss, resp.StatusCode, err
 }
