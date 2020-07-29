@@ -44,7 +44,7 @@ func (q *Queue) RunTimer() {
 }
 
 func (q *Queue) Add(text string) {
-	log.Debug("queue add", text)
+	log.Debug("queue add ", text)
 	q.mu.Lock()
 	defer q.mu.Unlock()
 	q.Rows = append(q.Rows, text)

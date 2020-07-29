@@ -8,6 +8,7 @@ require (
 	github.com/go-chi/chi v4.1.2+incompatible
 	github.com/go-chi/cors v1.1.1
 	github.com/jmoiron/sqlx v1.2.0
+	github.com/labstack/gommon v0.3.0
 	github.com/marianogappa/sqlparser v0.0.0-20200521193905-eaeeaee64283
 	github.com/prometheus/client_golang v1.6.0
 	github.com/roistat/go-clickhouse v1.0.1

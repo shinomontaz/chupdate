@@ -29,10 +29,9 @@ func New(flush_interval, flush_count int, makeReq func(q, content string, count 
 }
 
 func (s *Service) Push(query, params string) {
-	log.Debug("inserter push", query, params)
+	log.Debug("inserter push ", query, params)
 	s.mu.Lock()
 	defer s.mu.Unlock()
-
 	defer s.wg.Done()
 
 	q, ok := s.List[query]
@@ -40,6 +39,7 @@ func (s *Service) Push(query, params string) {
 		q = queue.Create(s.Count, s.FlushInterval, query, s.makeReq)
 		s.List[query] = q
 	}
+
 	q.Add(params)
 }
 
