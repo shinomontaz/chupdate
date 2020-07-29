@@ -5,7 +5,7 @@ clickhouse update middleware
 1. You use ReplacingMergeTree engine family
 2. You need updates in CH ( and reasonable way to do that is to use insert new row and select with *LIMIT BY* )
 3. When sending updates to CH in proper way is complicated due to client software limitations ( you don't want to make many changes there)
-4. You need to work with one CH master, not a complicated sharded cluster
+4. You need to work with one CH master
 
 ### Installation
 
@@ -18,4 +18,8 @@ Insired by clickhouse-bulk
 
 ### Metrics
 
-### Other
+#TODO
+
+### Restriction
+1. Target tables must have version column with name "time". Now it is hardcoded ( #TODO )
+2. Queries must include full qualified table names ( with database name )
