@@ -16,18 +16,21 @@ type Service struct {
 	instr Inserter
 	parsr Parser
 	errs  chan<- error
-	wg    *sync.WaitGroup
-	sem   chan struct{}
+	//	chConn *clickhouse.Conn
+	wg  *sync.WaitGroup
+	sem chan struct{}
 }
 
 // NewCollector - default collector constructor
 func New(instr Inserter, parsr Parser, chUrl string, db *sqlx.DB, errs chan<- error) (c *Service) {
+	//	chUrl2 := "http://default:qwe@localhost:8123"
 	return &Service{
 		instr: instr,
 		parsr: parsr,
 		db:    db,
 		errs:  errs,
 		sem:   make(chan struct{}, 100),
+		//		chConn: clickhouse.NewConn(chUrl2, clickhouse.NewHttpTransport()),
 	}
 }
 
@@ -50,7 +53,26 @@ func (s *Service) Push(query string) {
 	timecolumn := "time"
 	selectsql := fmt.Sprintf("SELECT * FROM %s WHERE %s ORDER BY %s LIMIT 1 BY %s", table, where, timecolumn, strings.Join(condition_cols, ", "))
 
-	//	selectsql := fmt.Sprintf("SELECT * FROM %s WHERE %s", table, where)
+	// q := clickhouse.NewQuery(selectsql)
+	// iter := q.Iter(s.chConn)
+
+	// res_cols := s.getColumns(table)
+	// var result [][]string
+	// pointers := make([]interface{}, len(res_cols))
+	// container := make([]string, len(res_cols))
+	// for i, _ := range pointers {
+	// 	pointers[i] = &container[i]
+	// }
+	// for iter.Scan(pointers...) {
+	// 	result = append(result, container)
+	// }
+
+	// err := iter.Error()
+	// if err != nil {
+	// 	panic(fmt.Sprintf("%s, %s", selectsql, err))
+	// 	s.errs <- err
+	// 	return
+	// }
 
 	rows, err := s.db.Query(selectsql)
 	if err != nil {
@@ -105,6 +127,7 @@ func (s *Service) Push(query string) {
 
 	var res2 []string
 	for i, v := range res {
+		v = strings.Trim(v, "'")
 		if res_cols[i] == timecolumn {
 			res_cols = append(res_cols[:i], res_cols[i+1:]...)
 			continue

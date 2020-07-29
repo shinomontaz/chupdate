@@ -167,13 +167,14 @@ func TestUpdate(t *testing.T) {
 
 	prc := service.New(instr, updtr, parsr, env.Config.CHUrl, env.Db, errors)
 	var query string
-	var randField uint8
+	var randStr string
 
 	start := time.Now()
 	for i := 0; i < 10000; i++ {
 
-		randField = randBool()
-		query = fmt.Sprintf("UPDATE test.test2 SET another_field = %d WHERE id = %d", randField, uint32(i))
+		randStr = randString(10)
+		//		query = fmt.Sprintf("UPDATE test.test2 SET another_field = %d WHERE id = %d", randField, uint32(i))
+		query = fmt.Sprintf("UPDATE dct.roi2 SET region = '%s' WHERE widget_id = %d", randStr, uint32(i))
 		resp, err := prc.Process(query)
 		if err != nil {
 			panic(err)
