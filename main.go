@@ -29,8 +29,8 @@ var env *config.Env
 var errors chan error
 
 func init() {
-	env = config.NewEnv("./config")
-	env.InitDb()
+	env = config.NewEnv("conf")
+	//	env.InitDb()
 	env.InitLog()
 	errors = make(chan error, 1000)
 }
@@ -47,9 +47,10 @@ func main() {
 	go errorer.Listen(errors)
 	parsr := parser.New()
 	instr := inserter.New(env.Config.FlushInterval, env.Config.FlushCount, makeReq, errors)
-	updtr := updater.New(instr, parsr, env.Config.CHUrl, env.Db, errors)
+	updtr := updater.New(instr, parsr, env.Config.Clickhouse, errors)
 
-	prc := service.New(instr, updtr, parsr, env.Config.CHUrl, env.Db, errors)
+	//	prc := service.New(instr, updtr, parsr, env.Config.CHUrl, env.Db, errors)
+	prc := service.New(instr, updtr, parsr, env.Config.Clickhouse, errors)
 
 	mux := NewMux()
 	srv := &http.Server{

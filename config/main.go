@@ -6,47 +6,71 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"github.com/tkanos/gonfig"
-
 	_ "net/http/pprof"
 
+	"github.com/spf13/viper"
+
 	_ "github.com/ClickHouse/clickhouse-go"
+	"github.com/go-redis/redis/v8"
 	"github.com/jmoiron/sqlx"
 )
 
+// TableRule struct incapsulates a specific table config - it's title ( fully qualified ), slice of key column and version column name
+type TableRule struct {
+	Title   string   `json:"title"`
+	Key     []string `json:"key"`
+	Version string   `json:"version"`
+}
+
 type Config struct {
-	ListenPort    int    `env:"CHUPD_LISTENPORT"`
-	TestFlag      bool   `env:"CHUPD_TESTFLAG"`
-	FlushInterval int    `env:"CHUPD_INTERVAL"`
-	FlushCount    int    `env:"CHUPD_COUNT"`
-	DbHost        string `env:"CHUPD_DBHOST"`
-	DbName        string `env:"CHUPD_DBNAME"`
-	DbUser        string `env:"CHUPD_DBUSER"`
-	DbPass        string `env:"CHUPD_DBPASS"`
-	DbPort        int    `env:"CHUPD_DBPORT"`
-	CHUrl         string `env:"CHUPD_CHURL"`
+	TestFlag      bool   `json:"TestFlag"`
+	ListenPort    int    `json:"ListenPort"`
+	Clickhouse    string `json:"Clickhouse"`
+	Redis         string `json:"Redis"`
+	FlushInterval int    `json:"FlushInterval"`
+	FlushCount    int    `json:"FlushCount"`
+	TableRules    struct {
+		Main      TableRule   `json:"main"`
+		Secondary []TableRule `json:"secondary"`
+	} `json:"TableRules"`
 }
 
 type Env struct {
 	Db       *sqlx.DB
+	Redis    *redis.Client
 	Config   *Config
 	loglevel log.Level
 }
 
 func NewEnv(path string) *Env {
+	viper.SetConfigType("json")
+	viper.SetConfigName(path)
+	viper.AddConfigPath("config")
+
+	if err := viper.ReadInConfig(); err != nil {
+		checkErr(err)
+	}
+
 	var cfg Config
-	err := gonfig.GetConf(path+"/"+"conf.json", &cfg)
+	err := viper.Unmarshal(&cfg)
 	if err != nil {
-		err = gonfig.GetConf(path+"/"+"conf.tpl.json", &cfg)
 		checkErr(err)
 	}
 
 	loglevel := log.WarnLevel
 
+	log.Printf("%v\n", cfg)
+
 	return &Env{
 		Config:   &cfg,
 		loglevel: loglevel,
 	}
+}
+
+func (e *Env) Initredis() {
+	e.Redis = redis.NewClient(&redis.Options{
+		Addr: e.Config.Redis,
+	})
 }
 
 func (e *Env) InitLog() {
@@ -58,17 +82,17 @@ func (e *Env) InitLog() {
 	log.SetFormatter(&log.JSONFormatter{})
 }
 
-func (e *Env) InitDb() {
-	dsn := initDbDsn(e.Config)
-	log.Debug(dsn)
-	db, err := sqlx.Connect("clickhouse", dsn)
-	checkErr(err)
-	e.Db = db
-}
+// func (e *Env) InitDb() {
+// 	dsn := initDbDsn(e.Config)
+// 	log.Debug(dsn)
+// 	db, err := sqlx.Connect("clickhouse", dsn)
+// 	checkErr(err)
+// 	e.Db = db
+// }
 
-func initDbDsn(cfg *Config) string {
-	return fmt.Sprintf("tcp://%s:%d?username=%s&password=%s&database=%s", cfg.DbHost, cfg.DbPort, cfg.DbUser, cfg.DbPass, cfg.DbName)
-}
+// func initDbDsn(cfg *Config) string {
+// 	return fmt.Sprintf("tcp://%s:%d?username=%s&password=%s&database=%s", cfg.DbHost, cfg.DbPort, cfg.DbUser, cfg.DbPass, cfg.DbName)
+// }
 
 func checkErr(err error) {
 	if err != nil {

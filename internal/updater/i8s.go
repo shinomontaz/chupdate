@@ -1,9 +1,10 @@
 package updater
 
+import "github.com/shinomontaz/chupdate/internal/types"
+
 type Inserter interface {
-	Push(q, params string)
+	Push(pq *types.ParsedQuery)
 }
 
 type Parser interface {
-	Updateparse(body string) (table, where string, cols []string, values []string, condition_cols []string)
 }

@@ -11,8 +11,6 @@ import (
 	"time"
 
 	log "github.com/sirupsen/logrus"
-
-	"github.com/jmoiron/sqlx"
 )
 
 type Service struct {
@@ -20,19 +18,17 @@ type Service struct {
 	inserter Inserter
 	updater  Updater
 	url      string
-	db       *sqlx.DB
 	client   *http.Client
 	parser   Parser
 	errs     chan<- error
 	wg       sync.WaitGroup
 }
 
-func New(ins Inserter, upd Updater, parsr Parser, url string, db *sqlx.DB, errs chan<- error) *Service {
+func New(ins Inserter, upd Updater, parsr Parser, url string, errs chan<- error) *Service {
 	s := &Service{
 		inserter: ins,
 		updater:  upd,
 		parser:   parsr,
-		db:       db,
 		url:      url,
 		errs:     errs,
 		Debug:    true,
@@ -51,21 +47,23 @@ func (s *Service) Process(data string) (resp string, err error) {
 	// params = "INSERT INTO table3 (c1, c2, c3) FORMAT TabSeparated"
 	// content = "v11	v12	v13\nv21	v22	v23"
 	data = strings.ToLower(data)
-	query, content, insert, update, err := s.parser.Parse(data) // query=INSERT INTO table3 (c1, c2, c3) VALUES ('v1', 'v2', 'v3') and this string entirely is in 'qs' or 'ss'
+	pq := s.parser.Parse(data)
 
-	if err != nil {
-		return "", err
-	}
+	// if err != nil {
+	// 	return "", err
+	// }
 
-	if insert {
+	if pq.Insert {
 		s.wg.Add(1)
-		go s.inserter.Push(query, content)
+		// add from "list" to inserter.ocache
+
+		go s.inserter.Push(pq)
 		return "", nil
 	}
 
-	if update {
+	if pq.Update {
 		s.wg.Add(1)
-		go s.updater.Push(query)
+		go s.updater.Push(pq)
 		return "", nil
 	}
 
@@ -90,7 +88,6 @@ func (s *Service) Handle(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	w.Write([]byte(resp))
-
 }
 
 func (s *Service) Shutdown(ctx context.Context) error {

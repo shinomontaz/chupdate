@@ -4,8 +4,9 @@ import (
 	"context"
 	"sync"
 
+	"github.com/shinomontaz/chupdate/internal/types"
+
 	"github.com/shinomontaz/chupdate/internal/queue"
-	log "github.com/sirupsen/logrus"
 )
 
 type Service struct {
@@ -16,6 +17,7 @@ type Service struct {
 	makeReq       func(q, content string, count int)
 	errs          chan<- error
 	wg            *sync.WaitGroup
+	ocache        map[string]map[string]string
 }
 
 func New(flush_interval, flush_count int, makeReq func(q, content string, count int), errs chan<- error) *Service {
@@ -25,22 +27,23 @@ func New(flush_interval, flush_count int, makeReq func(q, content string, count 
 		List:          make(map[string]*queue.Queue),
 		makeReq:       makeReq,
 		errs:          errs,
+		ocache:        make(map[string]map[string]string, flush_count),
 	}
 }
 
-func (s *Service) Push(query, params string) {
-	log.Debug("inserter push ", query, params)
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	defer s.wg.Done()
+func (s *Service) Push(pq *types.ParsedQuery) {
+	// log.Debug("inserter push ", query, params)
+	// s.mu.Lock()
+	// defer s.mu.Unlock()
+	// defer s.wg.Done()
 
-	q, ok := s.List[query]
-	if !ok {
-		q = queue.Create(s.Count, s.FlushInterval, query, s.makeReq)
-		s.List[query] = q
-	}
+	// q, ok := s.List[query]
+	// if !ok {
+	// 	q = queue.Create(s.Count, s.FlushInterval, query, s.makeReq)
+	// 	s.List[query] = q
+	// }
 
-	q.Add(params)
+	// q.Add(params)
 }
 
 func (s *Service) SetWg(wg *sync.WaitGroup) {

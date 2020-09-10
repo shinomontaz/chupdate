@@ -36,48 +36,51 @@ func TestParse(t *testing.T) {
 	var content string
 	var insert bool
 	var update bool
+	//	var list map[string]string
 
 	body := strings.ToLower(qTitle2) + " " + strings.ToLower(qContent2)
-	params, content, insert, update, _ = prs.Parse(body)
+	params, content, _, insert, update, _ = prs.Parse(body)
 
-	escTitle2 := url.QueryEscape(strings.ToLower(qTitle2))
+	//	fmt.Println(list)
 
-	assert.Equal(t, "query="+escTitle2, params)
+	//	escTitle2 := url.QueryEscape(strings.ToLower(qTitle2))
+
+	assert.Equal(t, strings.ToLower(qTitle2), params)
 	assert.Equal(t, strings.ToLower(qContent2), content)
 	assert.Equal(t, false, update)
 	assert.Equal(t, true, insert)
 
-	params, content, insert, _, _ = prs.Parse(strings.ToLower(qTitle) + " " + qContent)
+	params, content, _, insert, _, _ = prs.Parse(strings.ToLower(qTitle) + " " + qContent)
 
 	assert.Equal(t, "query="+escTitle, params)
 	assert.Equal(t, qContent, content)
 	assert.Equal(t, true, insert)
 
-	params, content, insert, _, _ = prs.Parse(strings.ToLower(qTitle) + " " + qContent)
+	params, content, _, insert, _, _ = prs.Parse(strings.ToLower(qTitle) + " " + qContent)
 
 	assert.Equal(t, "query="+escTitle, params)
 	assert.Equal(t, qContent, content)
 	assert.Equal(t, true, insert)
 
-	params, content, insert, _, _ = prs.Parse(strings.ToLower(qValuesTitle) + " " + qValuesContent)
+	params, content, _, insert, _, _ = prs.Parse(strings.ToLower(qValuesTitle) + " " + qValuesContent)
 
 	assert.Equal(t, "query="+url.QueryEscape(strings.ToLower(qValuesTitle)), params)
 	assert.Equal(t, qValuesContent, content)
 	assert.Equal(t, true, insert)
 
-	params, content, insert, _, _ = prs.Parse(strings.ToLower(qSelect))
+	params, content, _, insert, _, _ = prs.Parse(strings.ToLower(qSelect))
 
 	assert.Equal(t, "query="+escSelect, params)
 	assert.Equal(t, "", content)
 	assert.Equal(t, false, insert)
 
-	params, content, insert, _, _ = prs.Parse(strings.ToLower(qTitle) + " " + qContent)
+	params, content, _, insert, _, _ = prs.Parse(strings.ToLower(qTitle) + " " + qContent)
 
 	assert.Equal(t, "query="+strings.ToLower(escTitle), strings.ToLower(params))
 	assert.Equal(t, qContent, content)
 	assert.Equal(t, true, insert)
 
-	params, content, insert, _, _ = prs.Parse(strings.ToLower(qValuesTitle) + " " + qValuesContent)
+	params, content, _, insert, _, _ = prs.Parse(strings.ToLower(qValuesTitle) + " " + qValuesContent)
 
 	assert.Equal(t, "query="+strings.ToLower(url.QueryEscape(qValuesTitle)), strings.ToLower(params))
 	assert.Equal(t, qValuesContent, content)
@@ -88,7 +91,7 @@ func TestUpdate(t *testing.T) {
 	prs := New()
 	qTitleUpdate := "UPDATE table3 SET c1 = 1, 'c2' = 'sdfsdf' WHERE c3 = 2 AND c4 = 'sdfsdf'"
 	body := strings.ToLower(qTitleUpdate)
-	table, where, cols, vals := prs.Updateparse(body)
+	table, where, cols, vals, conditional_cols := prs.Updateparse(body)
 
 	assert.Equal(t, "table3", table)
 	assert.Equal(t, "c3 = 2 and c4 = 'sdfsdf'", where)
@@ -96,4 +99,5 @@ func TestUpdate(t *testing.T) {
 	t.Logf("where: %s", where)
 	t.Logf("cols: %v", cols)
 	t.Logf("vals: %v", vals)
+	t.Logf("conditional_cols: %v", conditional_cols)
 }

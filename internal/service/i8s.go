@@ -3,20 +3,22 @@ package service
 import (
 	"context"
 	"sync"
+
+	"github.com/shinomontaz/chupdate/internal/types"
 )
 
 type Inserter interface {
-	Push(q, params string)
+	Push(pq *types.ParsedQuery)
 	Shutdown(ctx context.Context)
 	SetWg(wg *sync.WaitGroup)
 }
 
 type Updater interface {
-	Push(q string)
+	Push(pq *types.ParsedQuery)
 	Shutdown(ctx context.Context)
 	SetWg(wg *sync.WaitGroup)
 }
 
 type Parser interface {
-	Parse(body string) (params, content string, insert, update bool, err error)
+	Parse(body string) *types.ParsedQuery
 }
